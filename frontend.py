@@ -1,7 +1,7 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-from backend import generar_informe_actividad, seguimiento_metricas, establecer_configuraciones, analizar_contribuciones
+from backend import generar_informe_actividad, seguimiento_metricas, establecer_configuraciones, analizar_contribuciones, analizar_issues
 
 st.set_page_config(layout="wide")
 st.title("🎯 Interfaz Interactiva - Git")
@@ -68,7 +68,17 @@ elif seccion == ":bar_chart: Reportes":
     })
 
     if action == "bar":
-        fig = px.bar(data, x="Usuarios", y="Commits", title="Commits por Usuario", color="Usuarios")
+        data = analizar_issues()
+        data_reset = data.reset_index().rename(columns={"index": "Mes"})
+        data_reset["Mes"] = data_reset["Mes"].astype(str) # Convertir Period a String
+        fig = px.bar(
+            data_reset, 
+            x="Mes", 
+            y=["Abiertos", "Cerrados"], 
+            title="Issues Abiertos y Cerrados por Mes", 
+            labels={"value": "Cantidad de Issues", "Mes": "Mes"}, 
+            barmode="stack")
+        
         st.plotly_chart(fig, use_container_width=True)
 
     elif action == "pie":

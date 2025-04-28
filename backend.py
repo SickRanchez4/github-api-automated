@@ -166,3 +166,54 @@ def formatear_timedelta(td):
         return f"{days} days, {hours:02}:{minutes:02}:{seconds:02}"
     else:
         return f"{hours:02}:{minutes:02}:{seconds:02}"
+
+def obtener_issues():
+    url = f"https://api.github.com/repos/{OWNER}/{REPO}/issues"
+    params = {
+        "state": "all",      # Queremos tanto abiertas como cerradas
+        "per_page": 100,
+        "page": 1
+    }
+
+    issues = []
+    while True:
+        response = requests.get(url, headers=HEADERS, params=params)
+        if response.status_code != 200:
+            raise Exception(f"Error al obtener issues: {response.text}")
+        data = response.json()
+
+        # Ignorar Pull Requests (son técnicamente issues pero no nos interesan)
+        issues += [issue for issue in data if "pull_request" not in issue]
+
+        if "next" in response.links:
+            params["page"] += 1
+        else:
+            break
+    return issues
+
+def analizar_issues():
+    issues = obtener_issues()
+    datos = []
+    for issue in issues:
+        creado = datetime.strptime(issue["created_at"], "%Y-%m-%dT%H:%M:%SZ")
+        cerrado = None
+        if issue.get("closed_at"):
+            cerrado = datetime.strptime(issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ")
+        
+        datos.append({
+            "Creado": creado,
+            "Cerrado": cerrado
+        })
+    
+    df = pd.DataFrame(datos)
+
+    # Agrupar por mes
+    df["Mes_Creado"] = df["Creado"].dt.to_period("M")
+    df["Mes_Cerrado"] = df["Cerrado"].dt.to_period("M")
+
+    # Contar
+    abiertos_por_mes = df.groupby("Mes_Creado").size().rename("Abiertos")
+    cerrados_por_mes = df.groupby("Mes_Cerrado").size().rename("Cerrados")
+
+    resumen = pd.concat([abiertos_por_mes, cerrados_por_mes], axis=1).fillna(0).astype(int)
+    return resumen
