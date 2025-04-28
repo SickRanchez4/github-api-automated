@@ -1,7 +1,7 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-from backend import generar_informe_actividad, seguimiento_metricas, establecer_configuraciones, analizar_contribuciones, analizar_issues
+from backend import generar_informe_actividad, seguimiento_metricas, establecer_configuraciones, analizar_contribuciones, analizar_issues, analizar_pull_requests_por_mes
 
 st.set_page_config(layout="wide")
 st.title("🎯 Interfaz Interactiva - Git")
@@ -100,12 +100,9 @@ elif seccion == ":bar_chart: Reportes":
             st.metric("Tiempo Merge PR", promedio_merge_prs)
 
     elif action == "line":
-        # Datos simulados para línea
-        df_line = pd.DataFrame({
-            "Fecha": pd.date_range(start="2024-01-01", periods=10, freq="M"),
-            "PRs": [5, 8, 6, 12, 9, 7, 10, 11, 6, 9]
-        })
-        fig = px.line(df_line, x="Fecha", y="PRs", title="Pull Requests por Mes")
+        st.title("Pull Requests por Mes")
+        data = analizar_pull_requests_por_mes()
+        fig = px.line(data, x="Mes", y="Pull Requests", markers=True, title="Evolución de Pull Requests")
         st.plotly_chart(fig, use_container_width=True)
 
 elif seccion == ":clipboard: Tareas":

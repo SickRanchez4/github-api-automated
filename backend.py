@@ -217,3 +217,38 @@ def analizar_issues():
 
     resumen = pd.concat([abiertos_por_mes, cerrados_por_mes], axis=1).fillna(0).astype(int)
     return resumen
+
+def obtener_pull_requests():
+    url = f"https://api.github.com/repos/{OWNER}/{REPO}/pulls"
+    params = {"state": "all", "per_page": 100}
+    
+    pull_requests = []
+    while url:
+        response = requests.get(url, headers=HEADERS, params=params)
+        response.raise_for_status()
+        pull_requests.extend(response.json())
+        
+        # Manejar paginación
+        if 'next' in response.links:
+            url = response.links['next']['url']
+            params = {}  # no enviar params en siguientes páginas
+        else:
+            url = None
+
+    return pull_requests
+
+def analizar_pull_requests_por_mes():
+    prs = obtener_pull_requests()
+    fechas = []
+    for pr in prs:
+        fecha_creacion = datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ")
+        fechas.append(fecha_creacion)
+    
+    df = pd.DataFrame({"Fecha_Creacion": fechas})
+    
+    # Agrupar por mes
+    df["Mes"] = df["Fecha_Creacion"].dt.to_period("M")
+    df["Mes"] = df["Fecha_Creacion"].dt.to_period("M").astype(str) # Convertir Period a String
+    conteo_por_mes = df.groupby("Mes").size().rename("Pull Requests")
+    
+    return conteo_por_mes.reset_index()
