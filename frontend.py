@@ -1,10 +1,10 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-from backend import generar_informe_actividad, seguimiento_metricas
+from backend import generar_informe_actividad, seguimiento_metricas, establecer_configuraciones, analizar_contribuciones
 
 st.set_page_config(layout="wide")
-st.title("🎯 Interfaz Interactiva - RAG Técnicas")
+st.title("🎯 Interfaz Interactiva - Git")
 
 st.sidebar.title("Menú")
 
@@ -21,15 +21,18 @@ if seccion == ":house: Principal":
 
         col1, col2 = st.columns(2)
         with col1:
-            input1 = st.text_input("Texto 1")
+            input1 = st.text_input("Dueño del Repositorio")
         with col2:
-            input2 = st.text_input("Texto 2")
+            input2 = st.text_input("Nombre del Repositorio")
 
-        access_level = st.radio("Acceso", ["public", "private"], horizontal=True)
+        access_level = st.radio("Personal Access Token", ["No", "Si"], horizontal=True)
 
-        if access_level == "private":
-            extra_input = st.text_input("Texto Extra (solo privado)")
+        if access_level == "Si":
+            extra_input = st.file_uploader("Seleccione el archivo de texto que contiene el Personal Acces Token:", type=["txt"])
 
+        if st.button("Guardar"):
+            establecer_configuraciones(input1, input2, extra_input)
+            st.write("¡Configuraciones establecidas!")
     st.markdown("---")
     
 elif seccion == ":bar_chart: Reportes":
@@ -60,7 +63,7 @@ elif seccion == ":bar_chart: Reportes":
 
     # Datos de ejemplo
     data = pd.DataFrame({
-        "Usuarios": ["NirDiamant", "tevfikcagridural", "lzytitan494", "Nick"],
+        "Usuario": ["NirDiamant", "tevfikcagridural", "lzytitan494", "Nick"],
         "Commits": [213, 21, 16, 15]
     })
 
@@ -69,7 +72,8 @@ elif seccion == ":bar_chart: Reportes":
         st.plotly_chart(fig, use_container_width=True)
 
     elif action == "pie":
-        fig = px.pie(data, names="Usuarios", values="Commits", title="Distribución de Commits")
+        data = analizar_contribuciones()
+        fig = px.pie(data, names="Usuario", values="Commits", title="Distribución de Commits")
         st.plotly_chart(fig, use_container_width=True)
 
     elif action == "cards":
@@ -93,9 +97,6 @@ elif seccion == ":bar_chart: Reportes":
         })
         fig = px.line(df_line, x="Fecha", y="PRs", title="Pull Requests por Mes")
         st.plotly_chart(fig, use_container_width=True)
-
-    elif action is None:
-        st.info("Selecciona una opción para ver los resultados.")
 
 elif seccion == ":clipboard: Tareas":
     st.title("Gestión de Tareas")
